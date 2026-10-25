@@ -1,6 +1,7 @@
 import { createClient, type Session } from '@supabase/supabase-js'
 import examBrut from './exam.html?raw'
 import themeExam from './theme-exam.css?raw'
+import comptesVue from './comptes-vue.js?raw'
 import './istb.css'
 
 /** Site ISTB de suivi financier de chantier, aux couleurs de l'ISTB.
@@ -30,18 +31,21 @@ const TEXTES: [string, string][] = [
   ['<h2>Ton chantier d’examen</h2>', '<h2>Ton chantier</h2>'],
   ['et ton propre chantier pour l’examen', 'et tes propres chantiers'],
   [' : à montrer et à lire au jury', ' : à présenter'],
+  ["['RÉVISION',[['memo'", "['OUTILS',[['memo'"],
   [' pendant l’examen', ''],
   ['<h3>À dire au jury</h3>', '<h3>À retenir</h3>'],
 ]
 
 /** L'appli de chantier, avec ses propres clés de stockage local (pour ne pas se mélanger avec FACE sur le même navigateur) et l'habillage ISTB. */
-function pageExam(): string {
+function pageExam(role: string, uid: string): string {
   let html = examBrut
     .replaceAll("'exam-sa-", "'istb-sa-")
     .replaceAll("'exam-help-", "'istb-help-")
     .replaceAll('Supabase FACE', 'ton compte ISTB')
   for (const [avant, apres] of TEXTES) html = html.replaceAll(avant, apres)
-  return html + `<style>${themeExam}</style>`
+  // Onglet « Comptes » pour les profs et les admins (« </ » échappé pour ne pas fermer la balise script).
+  const vue = `window.ISTB_ROLE=${JSON.stringify(role)};window.ISTB_UID=${JSON.stringify(uid)};\n${comptesVue}`.replaceAll('</', '<\\/')
+  return html + `<style>${themeExam}</style><script>${vue}</script>`
 }
 
 function attente(texte = 'Chargement…') {
@@ -106,15 +110,18 @@ async function changerMotDePasse() {
 }
 
 let pont: ((e: MessageEvent) => void) | null = null
+let comptes: ((e: MessageEvent) => void) | null = null
 
 async function ouvrir(session: Session) {
   attente()
-  const { data: membre } = await supabase.from('istb_membres').select('identifiant').eq('user_id', session.user.id).maybeSingle()
+  let { data: membre, error } = await supabase.from('istb_membres').select('identifiant, role').eq('user_id', session.user.id).maybeSingle()
+  // Base pas encore passée aux rôles (comptes.sql) : on garde l'accès, sans l'onglet Comptes.
+  if (error) ({ data: membre } = await supabase.from('istb_membres').select('identifiant').eq('user_id', session.user.id).maybeSingle())
   if (!membre) {
     await supabase.auth.signOut()
     return connexion("Ce compte n'a pas accès au site ISTB.")
   }
-  const qui = (membre as { identifiant: string }).identifiant
+  const { identifiant: qui, role = 'eleve' } = membre as { identifiant: string; role?: string }
   app.innerHTML = `
   <div class="site">
     <header class="bandeau">
@@ -155,7 +162,24 @@ async function ouvrir(session: Session) {
     }
   }
   window.addEventListener('message', pont)
-  cadre.srcdoc = pageExam()
+  if (comptes) window.removeEventListener('message', comptes)
+  comptes = async (e: MessageEvent) => {
+    const win = cadre.contentWindow
+    if (!win || e.source !== win || !e.data || typeof e.data.istbReq !== 'number') return
+    const { istbReq, op, args = {} } = e.data as { istbReq: number; op: string; args?: Record<string, string> }
+    const repondre = (r: { ok: boolean; data?: unknown; err?: string }) => win.postMessage({ istbRep: istbReq, ...r }, '*')
+    const appels: Record<string, () => PromiseLike<{ data: unknown; error: { message: string } | null }>> = {
+      liste: () => supabase.rpc('istb_comptes'),
+      creer: () => supabase.rpc('istb_creer_compte', { p_identifiant: args.identifiant, p_nom: args.nom, p_mot_de_passe: args.mot_de_passe, p_role: args.role }),
+      modifier: () => supabase.rpc('istb_modifier_compte', { p_user_id: args.user_id, p_nom: args.nom ?? null, p_role: args.role ?? null, p_mot_de_passe: args.mot_de_passe ?? null }),
+      supprimer: () => supabase.rpc('istb_supprimer_compte', { p_user_id: args.user_id }),
+    }
+    if (!appels[op]) return repondre({ ok: false, err: 'Opération inconnue.' })
+    const { data, error } = await appels[op]()
+    repondre(error ? { ok: false, err: error.message } : { ok: true, data })
+  }
+  window.addEventListener('message', comptes)
+  cadre.srcdoc = pageExam(role, session.user.id)
 }
 
 let utilisateur: string | null | undefined = undefined
