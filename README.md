@@ -7,5 +7,5 @@ Site de l'appli d'examen ISTB (suivi financier de chantier : étude de prix, Poi
 - **Base** : `supabase/schema.sql`, à exécuter dans le SQL Editor du projet (relançable sans risque).
 - **Ajouter un accès** : créer le compte dans Supabase (Authentication > Users > Add user, « Auto Confirm User »), puis
   `insert into istb_membres (user_id, identifiant) select id, 'identifiant' from auth.users where email = 'adresse@exemple.fr';`
-- **Mise en ligne** : GitHub Pages, automatique à chaque push sur `main` (`.github/workflows/pages.yml`).
+- **Mise en ligne** : https://adriensantos2103-lgtm.github.io/ISTB/ ; automatique à chaque push sur `main` (`.github/workflows/pages.yml` construit le site et le pousse sur la branche `gh-pages`).
 - **En local** : `npm install`, puis `npm run dev`.
