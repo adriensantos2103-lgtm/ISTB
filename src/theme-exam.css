@@ -1,0 +1,24 @@
+/* Habillage ISTB de l'appli d'examen (injecté dans le cadre, après ses propres styles). */
+:root {
+  --bg: #f4f5fb; --panel: #ffffff; --ink: #1b1d33; --mute: #5d6080; --line: #d7daee; --soft: #f1f2fa;
+  --slate: #333a8e; --slate-2: #5a63c7; --tile: #333a8e; --input: #fbfbff; --input-ink: #333a8e;
+  --help-bg: #eceefa; --help-line: #cfd3ef;
+  --shadow: 0 1px 2px rgba(27, 29, 51, .06), 0 2px 8px rgba(51, 58, 142, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11132a; --panel: #1a1d3a; --ink: #e6e8f5; --mute: #a2a6c6; --line: #2e3360; --soft: #20244a;
+    --slate: #9aa2f0; --slate-2: #b7bdf5; --tile: #9aa2f0; --input: #22264e; --input-ink: #c9cdfa;
+    --help-bg: #1f2347; --help-line: #343a72;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11132a; --panel: #1a1d3a; --ink: #e6e8f5; --mute: #a2a6c6; --line: #2e3360; --soft: #20244a;
+  --slate: #9aa2f0; --slate-2: #b7bdf5; --tile: #9aa2f0; --input: #22264e; --input-ink: #c9cdfa;
+  --help-bg: #1f2347; --help-line: #343a72;
+}
+.btn.pri { color: var(--panel); }
+.brand { color: var(--slate); }
+.brand small { color: var(--mute); }
+.kpi { border-top-color: var(--slate-2); }
+.kpi:first-child { border-top-color: var(--slate); }
