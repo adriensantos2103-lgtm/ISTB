@@ -1,7 +1,7 @@
 -- Comptes du site ISTB : rôles élève / prof / admin et gestion des comptes depuis l'onglet « Comptes ».
 -- À exécuter dans le SQL Editor du projet « ISTB EXAM », après schema.sql. Le script peut être relancé sans risque.
 --   élève : ne gère aucun compte
---   prof  : voit les comptes et crée des comptes élèves ; ne supprime personne
+--   prof  : crée des comptes élèves ; ne voit pas la liste des comptes et ne supprime personne
 --   admin : crée, modifie (rôle, nom, mot de passe) et supprime tous les comptes, sauf le sien
 
 alter table public.istb_membres add column if not exists nom text not null default '';
@@ -20,13 +20,13 @@ returns text language sql stable security definer set search_path = '' as $$
   select role from public.istb_membres where user_id = auth.uid();
 $$;
 
--- Liste des comptes (prof et admin).
+-- Liste des comptes (admin seulement).
 create or replace function public.istb_comptes()
 returns table (user_id uuid, identifiant text, nom text, role text, created_at timestamptz, derniere_connexion timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 begin
-  if coalesce(public.istb_mon_role(), '') not in ('prof', 'admin') then
-    raise exception 'Accès réservé aux profs et aux admins.';
+  if coalesce(public.istb_mon_role(), '') <> 'admin' then
+    raise exception 'Accès réservé aux admins.';
   end if;
   return query
     select m.user_id, m.identifiant, m.nom, m.role, m.created_at, u.last_sign_in_at

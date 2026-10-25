@@ -79,9 +79,15 @@ body { background: var(--fond); color: var(--encre); font: 15px/1.45 system-ui, 
   font: 600 13px system-ui, sans-serif; cursor: pointer;
 }
 .bandeau .sortir:hover { background: #333a8e; color: #fff; }
+.contenu { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .cadre { flex: 1; min-height: 0; width: 100%; border: 0; background: var(--fond); }
+.bienvenue { flex: 1; display: grid; place-items: center; padding: 24px 16px; overflow: auto; }
+.bienvenue .carte { box-shadow: 0 6px 24px rgba(27, 29, 51, .12); border: 1px solid var(--ligne); }
+.bienvenue h1 { font-size: 22px; margin: 0 0 6px; color: var(--istb); }
+.bienvenue .sous { margin: 0 0 18px; color: var(--gris); font-size: 14px; }
 .attente { min-height: 100dvh; display: grid; place-items: center; color: var(--gris); }
 @media (max-width: 560px) {
   .bandeau img { height: 30px; }
   .bandeau .qui { display: none; }
 }
+.contenu .attente { min-height: 0; flex: 1; }

@@ -36,31 +36,33 @@
   }
 
   VIEWS.comptes = () => {
-    if (!ST.liste && !ST.charge && !ST.err) charger();
+    if (admin && !ST.liste && !ST.charge && !ST.err) charger();
     const lead = admin
       ? 'Tu crées, modifies et supprimes les comptes des élèves, des profs et des admins. Chacun a ses propres chantiers et ne voit pas ceux des autres.'
-      : 'Tu crées les comptes de tes élèves. Chaque élève a ses propres chantiers et ne voit pas ceux des autres. Pour supprimer un compte, demande à un admin.';
+      : 'Crée ici le compte d’un élève, puis transmets-lui son identifiant et son mot de passe.';
     const optRoles = admin
       ? Object.entries(ROLES).map(([k, l]) => `<option value="${k}" ${k === ST.b.role ? 'selected' : ''}>${l}</option>`).join('')
       : '<option value="eleve">Élève</option>';
     let h = head('Outils', 'Comptes', lead);
-    h += `<div class="grid2">
-    <div class="panel"><h2>Créer un compte</h2>
+    h += `<div class="${admin ? 'grid2' : ''}" ${admin ? '' : 'style="max-width:640px"'}>
+    <div class="panel"><h2>Créer un compte${admin ? '' : ' élève'}</h2>
       <div class="form">
         <label for="cpt-nom">Prénom et nom</label><input id="cpt-nom" value="${esc(ST.b.nom)}" autocomplete="off" placeholder="Ex. : Léa Martin">
         <label for="cpt-id">Identifiant</label><input id="cpt-id" value="${esc(ST.b.id)}" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ex. : lea.martin">
         <label for="cpt-mdp">Mot de passe</label><input id="cpt-mdp" value="${esc(ST.b.mdp)}" autocomplete="new-password" placeholder="8 caractères minimum">
-        <label for="cpt-role">Rôle</label><select id="cpt-role" ${admin ? '' : 'disabled'}>${optRoles}</select>
+        ${admin ? `<label for="cpt-role">Rôle</label><select id="cpt-role">${optRoles}</select>` : ''}
       </div>
+      <p class="note" style="margin-top:8px">Identifiant : lettres minuscules, chiffres, point ou tiret, 3 caractères minimum (ex. : lea.martin).</p>
       <div class="row" style="margin-top:12px"><button class="btn pri" data-cpt="creer" ${ST.occupe ? 'disabled' : ''}>Créer le compte</button></div>
       ${ST.cree ? `<p class="note" style="margin-top:12px"><span class="pill ok">Compte créé</span> À transmettre : identifiant <b>${esc(ST.cree.id)}</b>, mot de passe <b>${esc(ST.cree.mdp)}</b>. La personne pourra le changer avec le bouton « Mot de passe » en haut du site.</p>` : ''}
     </div>
-    <div class="panel"><h2>Qui peut faire quoi</h2><ul class="chk">
-      <li><b>Élève</b> : utilise l'appli avec ses propres chantiers. Ne gère aucun compte.</li>
-      <li><b>Prof</b> : comme un élève, et crée des comptes élèves. Ne supprime personne.</li>
+    ${admin ? `<div class="panel"><h2>Qui peut faire quoi</h2><ul class="chk">
+      <li><b>Élève</b> : utilise l'appli avec ses propres chantiers, sans bibliothèque de prix au départ. Ne gère aucun compte.</li>
+      <li><b>Prof</b> : comme un élève, avec la bibliothèque de prix, et crée des comptes élèves. Ne voit pas la liste des comptes et ne supprime personne.</li>
       <li><b>Admin</b> : crée, modifie et supprime tous les comptes.</li>
-    </ul><p class="note">Identifiant : lettres minuscules, chiffres, point ou tiret, 3 caractères minimum (ex. : lea.martin).</p></div>
+    </ul><p class="note">Chaque nouveau compte démarre sans chantier : la personne crée le sien à sa première connexion.</p></div>` : ''}
     </div>`;
+    if (!admin) return h;
     h += `<div class="panel" style="margin-top:16px"><h2>Comptes ${ST.liste ? `<span class="tag">${ST.liste.length}</span>` : ''}</h2>`;
     if (ST.err) h += `<p class="note"><span class="pill ko">Erreur</span> ${esc(ST.err)} <button class="btn sm" data-cpt="recharger">Réessayer</button></p>`;
     else if (!ST.liste) h += '<p class="note">Chargement…</p>';
@@ -90,7 +92,7 @@
     try {
       if (a === 'recharger') { ST.err = ''; ST.liste = null; render(); return }
       if (a === 'creer') {
-        const nom = champ('cpt-nom').value.trim(), id = champ('cpt-id').value.trim().toLowerCase(), mdp = champ('cpt-mdp').value, role = champ('cpt-role').value;
+        const nom = champ('cpt-nom').value.trim(), id = champ('cpt-id').value.trim().toLowerCase(), mdp = champ('cpt-mdp').value, role = admin ? champ('cpt-role').value : 'eleve';
         if (!nom || !id || !mdp) { toast('Remplis le nom, l’identifiant et le mot de passe.'); return }
         ST.b = { nom, id, mdp, role }; ST.occupe = true; render();
         try { await appel('creer', { identifiant: id, nom, mot_de_passe: mdp, role }) } finally { ST.occupe = false }

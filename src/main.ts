@@ -34,18 +34,26 @@ const TEXTES: [string, string][] = [
   ["['RÉVISION',[['memo'", "['OUTILS',[['memo'"],
   [' pendant l’examen', ''],
   ['<h3>À dire au jury</h3>', '<h3>À retenir</h3>'],
+  // Chantiers : la liste vient du compte en ligne (ISTB_INDEX), jamais de l'exemple par défaut du navigateur.
+  ['let REG = lsGet(REG_KEY);', 'let REG = window.ISTB_INDEX || lsGet(REG_KEY);'],
+  ["blankChantier('Mon chantier',true));", "blankChantier((REG.items.find(i=>i.id===REG.cur)||{}).name||'Nouveau chantier',true));"],
+  // Élèves : pas de bibliothèque de prix au départ, ils construisent la leur.
+  ['if(!LIB){const src=', `if(!LIB&&window.ISTB_ROLE==='eleve')LIB={biblio:[{code:'MO',des:"Main d'oeuvre",u:'H',pu:0,perte:1,cat:'MATERIEL / MO'}],salaries:[],sdp:[],locked:false};\nif(!LIB){const src=`],
 ]
 
-/** L'appli de chantier, avec ses propres clés de stockage local (pour ne pas se mélanger avec FACE sur le même navigateur) et l'habillage ISTB. */
-function pageExam(role: string, uid: string): string {
+type Index = { cur: string; items: { id: string; name: string; at?: string }[] }
+
+/** L'appli de chantier, avec un stockage local propre à chaque compte (plusieurs élèves peuvent partager un poste) et l'habillage ISTB. */
+function pageExam(role: string, uid: string, index: Index): string {
   let html = examBrut
-    .replaceAll("'exam-sa-", "'istb-sa-")
+    .replaceAll("'exam-sa-", `'istb-${uid}-`)
     .replaceAll("'exam-help-", "'istb-help-")
     .replaceAll('Supabase FACE', 'ton compte ISTB')
   for (const [avant, apres] of TEXTES) html = html.replaceAll(avant, apres)
   // Onglet « Comptes » pour les profs et les admins (« </ » échappé pour ne pas fermer la balise script).
-  const vue = `window.ISTB_ROLE=${JSON.stringify(role)};window.ISTB_UID=${JSON.stringify(uid)};\n${comptesVue}`.replaceAll('</', '<\\/')
-  return html + `<style>${themeExam}</style><script>${vue}</script>`
+  const avant = `window.ISTB_ROLE=${JSON.stringify(role)};window.ISTB_UID=${JSON.stringify(uid)};window.ISTB_INDEX=${JSON.stringify(index)};`.replaceAll('</', '<\\/')
+  html = html.replace('<head>', `<head><script>${avant}</script>`)
+  return html + `<style>${themeExam}</style><script>${comptesVue.replaceAll('</', '<\\/')}</script>`
 }
 
 function attente(texte = 'Chargement…') {
@@ -128,11 +136,51 @@ async function ouvrir(session: Session) {
       <div class="marque"><img src="${logo}" alt="ISTB"></div>
       <div class="compte"><span class="qui">Connecté : <b>${esc(qui)}</b></span><button class="sortir" type="button" data-mdp>Mot de passe</button><button class="sortir" type="button" data-sortir>Déconnexion</button></div>
     </header>
-    <iframe class="cadre" title="Suivi de chantier"></iframe>
+    <div class="contenu"></div>
   </div>`
-  const cadre = app.querySelector<HTMLIFrameElement>('.cadre')!
   app.querySelector<HTMLButtonElement>('[data-sortir]')!.onclick = () => supabase.auth.signOut()
   app.querySelector<HTMLButtonElement>('[data-mdp]')!.onclick = changerMotDePasse
+  const contenu = app.querySelector<HTMLDivElement>('.contenu')!
+
+  const { data: doc, error: errIndex } = await supabase.from('istb_docs').select('json').eq('cle', 'index').maybeSingle()
+  if (errIndex) { contenu.innerHTML = `<div class="attente">Chargement impossible : ${esc(errIndex.message)}. Recharge la page.</div>`; return }
+  const index = doc ? JSON.parse((doc as { json: string }).json) as Index : await premierChantier(contenu, session.user.id)
+  lancer(contenu, session, role, index)
+}
+
+/** Nouveau compte : aucun chantier enregistré, la personne crée le sien. */
+function premierChantier(contenu: HTMLElement, uid: string): Promise<Index> {
+  contenu.innerHTML = `
+  <main class="bienvenue">
+    <form class="carte" novalidate>
+      <h1>Bienvenue !</h1>
+      <p class="sous">Ton compte ne contient encore aucun chantier. Donne un nom à ton premier chantier pour commencer. Tu pourras en créer d'autres ensuite dans « Mes chantiers ».</p>
+      <p class="erreur" hidden></p>
+      <div class="champ"><label for="nom-ch">Nom du chantier</label><input id="nom-ch" placeholder="Ex. : Réfection toiture école Jean Jaurès – Lille" required></div>
+      <button class="btn" type="submit">Créer mon chantier</button>
+    </form>
+  </main>`
+  const form = contenu.querySelector('form')!
+  const err = contenu.querySelector<HTMLParagraphElement>('.erreur')!
+  contenu.querySelector<HTMLInputElement>('#nom-ch')!.focus()
+  return new Promise(resolve => {
+    form.onsubmit = async e => {
+      e.preventDefault()
+      const nom = contenu.querySelector<HTMLInputElement>('#nom-ch')!.value.trim()
+      if (!nom) { err.textContent = 'Donne un nom à ton chantier.'; err.hidden = false; return }
+      const id = 'c' + Date.now().toString(36)
+      const index: Index = { cur: id, items: [{ id, name: nom, at: new Date().toISOString() }] }
+      const { error } = await supabase.from('istb_docs').upsert(
+        { user_id: uid, cle: 'index', json: JSON.stringify(index), updated_at: new Date().toISOString() }, { onConflict: 'user_id,cle' })
+      if (error) { err.textContent = 'Création impossible : ' + error.message; err.hidden = false; return }
+      resolve(index)
+    }
+  })
+}
+
+function lancer(contenu: HTMLElement, session: Session, role: string, index: Index) {
+  contenu.innerHTML = '<iframe class="cadre" title="Suivi de chantier"></iframe>'
+  const cadre = contenu.querySelector<HTMLIFrameElement>('.cadre')!
 
   // L'appli demande ses lectures/écritures par message ; on les fait dans istb_docs.
   if (pont) window.removeEventListener('message', pont)
@@ -179,7 +227,7 @@ async function ouvrir(session: Session) {
     repondre(error ? { ok: false, err: error.message } : { ok: true, data })
   }
   window.addEventListener('message', comptes)
-  cadre.srcdoc = pageExam(role, session.user.id)
+  cadre.srcdoc = pageExam(role, session.user.id, index)
 }
 
 let utilisateur: string | null | undefined = undefined
