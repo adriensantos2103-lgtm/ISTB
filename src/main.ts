@@ -3,7 +3,7 @@ import examBrut from './exam.html?raw'
 import themeExam from './theme-exam.css?raw'
 import './istb.css'
 
-/** Site « ISTB – EXAM Santos Adrien » : l'appli d'examen seule, aux couleurs de l'ISTB.
+/** Site ISTB de suivi financier de chantier, aux couleurs de l'ISTB.
  *  Connexion par identifiant (ou e-mail) + mot de passe ; les chantiers sont dans istb_docs (RLS : membres ISTB). */
 
 // Projet Supabase « ISTB EXAM » (compte STS), distinct de celui de FACE.
@@ -17,14 +17,31 @@ const logo = new URL('logo-istb.png', location.href).href
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
-/** L'appli d'examen, avec ses propres clés de stockage local (pour ne pas se mélanger avec FACE sur le même navigateur) et l'habillage ISTB. */
+/** Textes propres à l'examen d'Adrien, remplacés pour une version destinée à l'école. */
+const TEXTES: [string, string][] = [
+  ['<title>EXAM Santos Adrien</title>', '<title>ISTB – Suivi de chantier</title>'],
+  ['<p class="brand">EXAM Santos Adrien<small>', '<p class="brand">Suivi de chantier<small>'],
+  ["['MON EXAMEN',[['chantiers','Mes chantiers'],['jury','Présenter au jury']]]", "['MES CHANTIERS',[['chantiers','Mes chantiers'],['jury','Synthèse du chantier']]]"],
+  ["head('Mon examen','Présenter mon chantier au jury',", "head('Mes chantiers','Synthèse du chantier',"],
+  ["'Mon chantier d’examen'", "'Nouveau chantier'"],
+  ['et crée à côté le chantier que tu présentes à l’examen', 'et crée à côté tes propres chantiers'],
+  ['Saisir mon chantier d’examen, dans l’ordre', 'Saisir un chantier, dans l’ordre'],
+  ["'Mémo examen'", "'Mémo'"],
+  ['<h2>Ton chantier d’examen</h2>', '<h2>Ton chantier</h2>'],
+  ['et ton propre chantier pour l’examen', 'et tes propres chantiers'],
+  [' : à montrer et à lire au jury', ' : à présenter'],
+  [' pendant l’examen', ''],
+  ['<h3>À dire au jury</h3>', '<h3>À retenir</h3>'],
+]
+
+/** L'appli de chantier, avec ses propres clés de stockage local (pour ne pas se mélanger avec FACE sur le même navigateur) et l'habillage ISTB. */
 function pageExam(): string {
-  return examBrut
+  let html = examBrut
     .replaceAll("'exam-sa-", "'istb-sa-")
     .replaceAll("'exam-help-", "'istb-help-")
     .replaceAll('Supabase FACE', 'ton compte ISTB')
-    .replace('<title>EXAM Santos Adrien</title>', '<title>ISTB – EXAM Santos Adrien</title>')
-    + `<style>${themeExam}</style>`
+  for (const [avant, apres] of TEXTES) html = html.replaceAll(avant, apres)
+  return html + `<style>${themeExam}</style>`
 }
 
 function attente(texte = 'Chargement…') {
@@ -36,8 +53,6 @@ function connexion(message = '') {
   <main class="connexion">
     <form class="carte" novalidate>
       <img class="logo" src="${logo}" alt="ISTB – Institut Supérieur des Techniciens du Bâtiment" width="556" height="109">
-      <h1>EXAM Santos Adrien</h1>
-      <p class="sous">Suivi financier de chantier · espace d'examen</p>
       <p class="erreur" ${message ? '' : 'hidden'}>${esc(message)}</p>
       <div class="champ">
         <label for="id">Identifiant</label>
@@ -103,10 +118,10 @@ async function ouvrir(session: Session) {
   app.innerHTML = `
   <div class="site">
     <header class="bandeau">
-      <div class="marque"><img src="${logo}" alt="ISTB"><span class="titre">EXAM Santos Adrien</span></div>
+      <div class="marque"><img src="${logo}" alt="ISTB"></div>
       <div class="compte"><span class="qui">Connecté : <b>${esc(qui)}</b></span><button class="sortir" type="button" data-mdp>Mot de passe</button><button class="sortir" type="button" data-sortir>Déconnexion</button></div>
     </header>
-    <iframe class="cadre" title="EXAM Santos Adrien"></iframe>
+    <iframe class="cadre" title="Suivi de chantier"></iframe>
   </div>`
   const cadre = app.querySelector<HTMLIFrameElement>('.cadre')!
   app.querySelector<HTMLButtonElement>('[data-sortir]')!.onclick = () => supabase.auth.signOut()

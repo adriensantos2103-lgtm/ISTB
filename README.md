@@ -1,6 +1,6 @@
-# ISTB – EXAM Santos Adrien
+# ISTB – Suivi de chantier
 
-Site de l'appli d'examen ISTB (suivi financier de chantier : étude de prix, Point 0, pointage, achats, tableaux de bord), aux couleurs de l'ISTB, avec connexion par identifiant + mot de passe. Plusieurs chantiers ; Grimonpont est le premier.
+Site ISTB (suivi financier de chantier : étude de prix, Point 0, pointage, achats, tableaux de bord), aux couleurs de l'ISTB, avec connexion par identifiant + mot de passe. Plusieurs chantiers ; Grimonpont est le premier.
 
 - **Appli** : `src/exam.html` (même appli que l'onglet EXAM de FACE), habillée par `src/theme-exam.css`.
 - **Connexion et sauvegarde** : `src/main.ts`, projet Supabase « ISTB EXAM » (compte STS). La clé dans le code est la clé *publishable*, publique par conception ; les données sont protégées par la RLS.

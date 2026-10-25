@@ -39,9 +39,7 @@ body { background: var(--fond); color: var(--encre); font: 15px/1.45 system-ui, 
   width: min(420px, 100%); background: var(--carte); border-radius: 16px; padding: 28px 24px 22px;
   box-shadow: 0 20px 50px rgba(10, 12, 40, .35);
 }
-.logo { display: block; width: 100%; max-width: 300px; height: auto; margin: 0 auto 18px; border-radius: 6px; }
-.carte h1 { font-size: 20px; margin: 0 0 4px; text-align: center; color: var(--istb); }
-.carte .sous { margin: 0 0 20px; text-align: center; color: var(--gris); font-size: 14px; }
+.logo { display: block; width: 100%; max-width: 300px; height: auto; margin: 0 auto 26px; border-radius: 6px; }
 .champ { display: grid; gap: 6px; margin-bottom: 14px; }
 .champ label { font-weight: 600; font-size: 13.5px; }
 .champ input {
@@ -75,7 +73,6 @@ body { background: var(--fond); color: var(--encre); font: 15px/1.45 system-ui, 
 }
 .bandeau .marque { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .bandeau img { height: 38px; width: auto; }
-.bandeau .titre { font: 700 15px system-ui, sans-serif; color: #333a8e; white-space: nowrap; border-left: 1px solid #d7daee; padding-left: 14px; }
 .bandeau .compte { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5d6080; }
 .bandeau .sortir {
   border: 1px solid #333a8e; color: #333a8e; background: #fff; border-radius: 8px; padding: 6px 12px;
@@ -86,5 +83,5 @@ body { background: var(--fond); color: var(--encre); font: 15px/1.45 system-ui, 
 .attente { min-height: 100dvh; display: grid; place-items: center; color: var(--gris); }
 @media (max-width: 560px) {
   .bandeau img { height: 30px; }
-  .bandeau .titre, .bandeau .qui { display: none; }
+  .bandeau .qui { display: none; }
 }

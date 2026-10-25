@@ -1,4 +1,4 @@
-/* Habillage ISTB de l'appli d'examen (injecté dans le cadre, après ses propres styles). */
+/* Habillage ISTB de l'appli de chantier (injecté dans le cadre, après ses propres styles). */
 :root {
   --bg: #f4f5fb; --panel: #ffffff; --ink: #1b1d33; --mute: #5d6080; --line: #d7daee; --soft: #f1f2fa;
   --slate: #333a8e; --slate-2: #5a63c7; --tile: #333a8e; --input: #fbfbff; --input-ink: #333a8e;
