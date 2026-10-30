@@ -554,9 +554,9 @@ document.addEventListener('change',e=>{
   else setPath(p,v);
   save();rerender();
 });
-function rerender(){const y=window.scrollY;const sx=[...document.querySelectorAll('.scroll')].map(s=>s.scrollLeft);
+function rerender(){const y=window.scrollY;const sx=[...document.querySelectorAll('.scroll,.olist')].map(s=>[s.scrollLeft,s.scrollTop]);
   setTimeout(()=>{const id=document.activeElement&&document.activeElement.id;render();window.scrollTo(0,y);
-    document.querySelectorAll('.scroll').forEach((s,i)=>{if(sx[i])s.scrollLeft=sx[i]});
+    document.querySelectorAll('.scroll,.olist').forEach((s,i)=>{const k=sx[i];if(k){s.scrollLeft=k[0];s.scrollTop=k[1]}});
     if(id){const el=document.getElementById(id);if(el){el.focus();if(el.select&&el.tagName==='INPUT')el.select()}}},0)}
 function inp(path,val,{n=false,cls='',id=null,ph='',list=''}={}){const v=val===null||val===undefined?'':val;
   return `<input id="${id||('i_'+path.replace(/[^\w]/g,'_'))}" data-b="${esc(path)}" ${n?'data-t="n" inputmode="decimal"':''} class="${n?'num ':''}${cls}" value="${esc(n&&v!==''?String(v).replace('.',','):v)}" ${ph?`placeholder="${esc(ph)}"`:''} ${list?`list="${list}"`:''}>`}
